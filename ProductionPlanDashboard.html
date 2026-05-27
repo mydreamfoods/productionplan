@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Production Dashboard — My Dream Foods</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #1c2230;
+    --border:   #263044;
+    --accent:   #3b82f6;
+    --accent-s: rgba(59,130,246,0.1);
+    --green:    #22c55e;
+    --green-s:  rgba(34,197,94,0.1);
+    --amber:    #f59e0b;
+    --amber-s:  rgba(245,158,11,0.1);
+    --red:      #ef4444;
+    --red-s:    rgba(239,68,68,0.1);
+    --purple:   #a855f7;
+    --purple-s: rgba(168,85,247,0.1);
+    --teal:    #0d9488;
+    --teal-s:  rgba(13,148,136,0.1);
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --label:    #a0aab8;
+    --border-r: 10px;
+    --shadow:   0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 54px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .topbar-logo {
+    font-size: 20px; line-height: 1;
+  }
+  .topbar h1 { font-size: 15px; font-weight: 600; }
+  .topbar p  { font-size: 11px; color: var(--muted); margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  #lastRefresh {
+    font-size: 11px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .btn-form-link {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 7px;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+    text-decoration: none;
+    display: flex; align-items: center; gap: 5px;
+    transition: opacity 0.15s;
+  }
+  .btn-form-link:hover { opacity: 0.85; }
+  .btn-refresh {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--label); font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border-radius: 7px;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Layout ── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  /* ── Filter Bar ── */
+  .filters {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-r);
+    padding: 16px 20px;
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+  }
+  .filter-field { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
+  .filter-field label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  select, input[type="date"] {
+    appearance: none; -webkit-appearance: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%237d8590' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  select:focus, input[type="date"]:focus { border-color: var(--accent); }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+  .btn-reset-filter {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 500;
+    padding: 8px 14px; border-radius: 7px;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+    align-self: flex-end;
+    transition: all 0.15s;
+  }
+  .btn-reset-filter:hover { border-color: var(--muted); color: var(--text); }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-r);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi.blue::before   { background: var(--accent); }
+  .kpi.green::before  { background: var(--green); }
+  .kpi.amber::before  { background: var(--amber); }
+  .kpi.red::before    { background: var(--red); }
+  .kpi.purple::before { background: var(--purple); }
+  .kpi.teal::before   { background: var(--teal); }
+
+  .kpi-icon { font-size: 18px; margin-bottom: 10px; }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px; font-weight: 500;
+  }
+  .kpi.blue   .kpi-val { color: var(--accent); }
+  .kpi.green  .kpi-val { color: var(--green); }
+  .kpi.amber  .kpi-val { color: var(--amber); }
+  .kpi.red    .kpi-val { color: var(--red); }
+  .kpi.purple .kpi-val { color: var(--purple); }
+  .kpi.teal   .kpi-val { color: var(--teal); }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Charts row ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-r);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 12px; font-weight: 600;
+    color: var(--label); margin-bottom: 16px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .chart-wrap { position: relative; }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-r);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .table-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .row-count {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 10px; }
+  thead th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 10px 14px; color: var(--label); white-space: nowrap; }
+  tbody td.date-col {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--muted);
+  }
+  tbody td.num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; text-align: right;
+  }
+  tfoot td {
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+    border-top: 2px solid var(--border);
+    text-align: right;
+    white-space: nowrap;
+  }
+  /* tfoot styles handled inline */
+  .stock-pos { color: var(--green);  font-weight: 600; }
+  .stock-neg { color: var(--red);    font-weight: 600; }
+  .stock-zero{ color: var(--muted); }
+
+  .dept-badge {
+    display: inline-block;
+    padding: 2px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .dept-opening  { background: var(--accent-s);  color: var(--accent); }
+  .dept-production{ background: var(--green-s);  color: var(--green); }
+  .dept-order    { background: var(--amber-s);   color: var(--amber); }
+  .dept-sales    { background: var(--red-s);     color: var(--red); }
+  .dept-closing  { background: var(--purple-s);  color: var(--purple); }
+  .dept-other    { background: var(--surface2);  color: var(--muted); }
+
+  /* ── Empty / Loading ── */
+  .state-box {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .state-box .spin {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error banner ── */
+  .err-banner {
+    display: none;
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 9px; padding: 12px 18px;
+    font-size: 13px; color: var(--red);
+    margin-bottom: 20px;
+    align-items: center; gap: 10px;
+  }
+
+  @media(max-width:900px) {
+    .kpi-grid { grid-template-columns: repeat(3,1fr); }
+    .kpi-grid .kpi:last-child { grid-column: span 1; }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media(max-width:600px) {
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .kpi-grid .kpi:last-child { grid-column: span 2; }
+    .topbar { padding: 0 16px; }
+    .page { padding: 16px 12px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">🏭</span>
+  <div>
+    <h1>Production Dashboard</h1>
+    <p>My Dream Foods Limited</p>
+  </div>
+  <div class="topbar-right">
+    <span id="lastRefresh"></span>
+    <a class="btn-form-link" href="https://script.google.com/macros/s/AKfycbxfcWADNwzwojx4Hyg8Ww86Difl7zmwB6tBY0sRMZRJeiyJQ9PRd2T0MKPGxW6XulPohQ/exec" target="_blank">+ New Entry</a>
+    <button class="btn-refresh" onclick="loadData()">⟳ Refresh</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Error -->
+  <div class="err-banner" id="errBanner">
+    <span id="errMsg">Error loading data</span>
+    <button class="btn-reset-filter" style="margin-left:auto;" onclick="loadData()">Retry</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-field">
+      <label>From Date</label>
+      <input type="date" id="fFrom"/>
+    </div>
+    <div class="filter-field">
+      <label>To Date</label>
+      <input type="date" id="fTo"/>
+    </div>
+    <div class="filter-field">
+      <label>Segment</label>
+      <select id="fSegment">
+        <option value="">All Segments</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Product</label>
+      <select id="fProduct">
+        <option value="">All Products</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Name</label>
+      <select id="fName">
+        <option value="">All Users</option>
+      </select>
+    </div>
+    <button class="btn-reset-filter" onclick="resetFilters()">✕ Clear</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi blue">
+      <div class="kpi-icon">📦</div>
+      <div class="kpi-label">Opening Stock</div>
+      <div class="kpi-val" id="kOpening">—</div>
+      <div class="kpi-sub">Total units</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-icon">⚙️</div>
+      <div class="kpi-label">Production</div>
+      <div class="kpi-val" id="kProduction">—</div>
+      <div class="kpi-sub">Units produced</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-label">Order</div>
+      <div class="kpi-val" id="kOrder">—</div>
+      <div class="kpi-sub">Units ordered</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-icon">🛒</div>
+      <div class="kpi-label">Sales</div>
+      <div class="kpi-val" id="kSales">—</div>
+      <div class="kpi-sub">Units sold</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-icon">🏪</div>
+      <div class="kpi-label">Closing Stock</div>
+      <div class="kpi-val" id="kClosing">—</div>
+      <div class="kpi-sub">Units closing</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-label">Net Stock</div>
+      <div class="kpi-val" id="kStock">—</div>
+      <div class="kpi-sub">Opening + Prod − Order − Sales</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Stock by Product</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="chartBar"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Quantity Mix</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="chartDoughnut"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pivot Summary -->
+  <div class="table-card" style="margin-bottom:12px;">
+    <div class="table-head">
+      <span class="table-title">Summary by Product</span>
+      <span class="row-count" id="pivotCount">0 products</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th>Product</th>
+            <th style="text-align:right;color:#3b82f6;">Opening Stock</th>
+            <th style="text-align:right;color:#22c55e;">Production</th>
+            <th style="text-align:right;color:#f59e0b;">Order</th>
+            <th style="text-align:right;color:#ef4444;">Sales</th>
+            <th style="text-align:right;color:#0d9488;">Closing Stock</th>
+            <th style="text-align:right;color:#a855f7;">Net Stock</th>
+          </tr>
+        </thead>
+        <tbody id="pivotBody">
+          <tr><td colspan="8"><div class="state-box"><div class="spin"></div>Loading…</div></td></tr>
+        </tbody>
+        <tfoot id="pivotFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- All Entries -->
+  <div class="table-card">
+    <div class="table-head">
+      <span class="table-title">All Entries</span>
+      <span class="row-count" id="rowCount">0 rows</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('date')">Date <span class="sort-icon" id="sort-date">↕</span></th>
+            <th onclick="sortBy('name')">Name <span class="sort-icon" id="sort-name">↕</span></th>
+            <th onclick="sortBy('segment')">Segment <span class="sort-icon" id="sort-segment">↕</span></th>
+            <th onclick="sortBy('product')">Product <span class="sort-icon" id="sort-product">↕</span></th>
+            <th onclick="sortBy('department')">Department <span class="sort-icon" id="sort-department">↕</span></th>
+            <th onclick="sortBy('quantity')" style="text-align:right;">Qty <span class="sort-icon" id="sort-quantity">↕</span></th>
+            <th style="text-align:right;">Stock</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="7">
+            <div class="state-box"><div class="spin"></div>Loading data…</div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxfcWADNwzwojx4Hyg8Ww86Difl7zmwB6tBY0sRMZRJeiyJQ9PRd2T0MKPGxW6XulPohQ/exec';
+
+let rawRows  = [];   // from GAS
+let sortCol  = 'date';
+let sortDir  = 1;    // 1=asc, -1=desc
+let barChart, doughnutChart;
+
+// ── Load ──────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('errBanner').style.display = 'none';
+  setTableLoading();
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getDashboard`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Server error');
+    rawRows = json.rows;
+    buildFilters();
+    render();
+    document.getElementById('lastRefresh').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  } catch (err) {
+    document.getElementById('errBanner').style.display = 'flex';
+    document.getElementById('errMsg').textContent = '⚠ ' + err.message;
+    setTableEmpty('Failed to load data');
+  }
+}
+
+// ── Build filter dropdowns ─────────────────────────────
+function buildFilters() {
+  const populate = (id, vals) => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">All</option>`;
+    [...new Set(vals)].sort().forEach(v => {
+      const o = document.createElement('option');
+      o.value = o.textContent = v;
+      sel.appendChild(o);
+    });
+    sel.value = cur;
+  };
+  populate('fSegment', rawRows.map(r => r.segment).filter(Boolean));
+  populate('fProduct',  rawRows.map(r => r.product).filter(Boolean));
+  populate('fName',     rawRows.map(r => r.name).filter(Boolean));
+
+  // Segment → filter product options
+  document.getElementById('fSegment').onchange = function() {
+    const seg  = this.value;
+    const opts = seg ? rawRows.filter(r => r.segment === seg).map(r => r.product) : rawRows.map(r => r.product);
+    populate('fProduct', opts.filter(Boolean));
+    render();
+  };
+  ['fFrom','fTo','fProduct','fName'].forEach(id =>
+    document.getElementById(id).onchange = render
+  );
+}
+
+// ── Filter rows ────────────────────────────────────────
+function getFiltered() {
+  const from = document.getElementById('fFrom').value;
+  const to   = document.getElementById('fTo').value;
+  const seg  = document.getElementById('fSegment').value;
+  const prod = document.getElementById('fProduct').value;
+  const name = document.getElementById('fName').value;
+
+  return rawRows.filter(r => {
+    if (seg  && r.segment !== seg)   return false;
+    if (prod && r.product !== prod)  return false;
+    if (name && r.name    !== name)  return false;
+    // Date filter: parse dd/MM/yyyy
+    if (from || to) {
+      const parts = r.date.split('/');
+      if (parts.length === 3) {
+        const d = `${parts[2]}-${parts[1]}-${parts[0]}`; // yyyy-mm-dd
+        if (from && d < from) return false;
+        if (to   && d > to)   return false;
+      }
+    }
+    return true;
+  });
+}
+
+// ── Calculate Stock per row group (Date+Segment+Product) ──
+function calcStock(filtered) {
+  // Build pivot: key → {opening, production, order, sales}
+  const pivot = {};
+  filtered.forEach(r => {
+    const key = `${r.date}||${r.segment}||${r.product}`;
+    if (!pivot[key]) pivot[key] = { opening: 0, production: 0, order: 0, sales: 0 };
+    const d = r.department.toLowerCase().trim();
+    if (d === 'opening stock') pivot[key].opening    += r.quantity;
+    else if (d === 'production') pivot[key].production += r.quantity;
+    else if (d === 'order')      pivot[key].order      += r.quantity;
+    else if (d === 'sales')      pivot[key].sales      += r.quantity;
+  });
+  // Attach stock to each row
+  return filtered.map(r => {
+    const key = `${r.date}||${r.segment}||${r.product}`;
+    const p   = pivot[key] || {};
+    const stock = (p.opening || 0) + (p.production || 0) - (p.order || 0) - (p.sales || 0);
+    return { ...r, stock };
+  });
+}
+
+// ── Render ─────────────────────────────────────────────
+function render() {
+  const filtered = getFiltered();
+  const rows     = calcStock(filtered);
+
+  // KPIs
+  const sum = k => filtered.filter(r => r.department.toLowerCase().trim() === k)
+                           .reduce((a, r) => a + r.quantity, 0);
+  const opening    = sum('opening stock');
+  const production = sum('production');
+  const order      = sum('order');
+  const sales      = sum('sales');
+  const stock      = opening + production - order - sales;
+  const closing    = stock < 0 ? 0 : stock;
+
+  document.getElementById('kOpening').textContent    = fmt(opening);
+  document.getElementById('kProduction').textContent  = fmt(production);
+  document.getElementById('kOrder').textContent       = fmt(order);
+  document.getElementById('kSales').textContent       = fmt(sales);
+  document.getElementById('kClosing').textContent     = fmt(closing);
+  const kStockEl = document.getElementById('kStock');
+  kStockEl.textContent = fmt(stock);
+  kStockEl.style.color = stock < 0 ? 'var(--red)' : stock === 0 ? 'var(--muted)' : 'var(--purple)';
+
+  // Pivot summary table
+  renderPivot(filtered);
+
+  // Sort entries
+  rows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (sortCol === 'date') { av = parseDateKey(av); bv = parseDateKey(bv); }
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    return av < bv ? -sortDir : av > bv ? sortDir : 0;
+  });
+
+  // Table
+  const tbody = document.getElementById('tableBody');
+  if (!rows.length) { setTableEmpty('No data for selected filters'); return; }
+
+  document.getElementById('rowCount').textContent = rows.length + ' rows';
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="date-col">${r.date}</td>
+      <td>${r.name}</td>
+      <td>${r.segment}</td>
+      <td>${r.product}</td>
+      <td>${deptBadge(r.department)}</td>
+      <td class="num">${r.quantity.toLocaleString()}</td>
+      <td class="num ${r.stock > 0 ? 'stock-pos' : r.stock < 0 ? 'stock-neg' : 'stock-zero'}">${r.stock.toLocaleString()}</td>
+    </tr>`).join('');
+
+  // Charts
+  renderCharts(filtered);
+}
+
+// ── Pivot Summary ─────────────────────────────────────
+function renderPivot(filtered) {
+  // Group by Segment + Product
+  const map = {};
+  filtered.forEach(r => {
+    const key = r.segment + '||' + r.product;
+    if (!map[key]) map[key] = { segment: r.segment, product: r.product, opening: 0, production: 0, order: 0, sales: 0, closing: 0 };
+    const d = r.department.toLowerCase().trim();
+    if      (d === 'opening stock')  map[key].opening    += r.quantity;
+    else if (d === 'production')      map[key].production += r.quantity;
+    else if (d === 'order')           map[key].order      += r.quantity;
+    else if (d === 'sales')           map[key].sales      += r.quantity;
+    else if (d === 'closing stock')   map[key].closing    += r.quantity;
+  });
+
+  const rows = Object.values(map).sort((a,b) =>
+    a.segment.localeCompare(b.segment) || a.product.localeCompare(b.product)
+  );
+  rows.forEach(r => { r.stock = r.opening + r.production - r.order - r.sales; r.closingCalc = r.stock < 0 ? 0 : r.stock; });
+
+  document.getElementById('pivotCount').textContent = rows.length + ' products';
+
+  const tbody = document.getElementById('pivotBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="state-box">No data</div></td></tr>';
+    document.getElementById('pivotFoot').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.segment}</td>
+      <td><strong>${r.product}</strong></td>
+      <td class="num" style="color:#3b82f6">${r.opening    ? r.opening.toLocaleString()    : '—'}</td>
+      <td class="num" style="color:#22c55e">${r.production ? r.production.toLocaleString() : '—'}</td>
+      <td class="num" style="color:#f59e0b">${r.order      ? r.order.toLocaleString()      : '—'}</td>
+      <td class="num" style="color:#ef4444">${r.sales      ? r.sales.toLocaleString()      : '—'}</td>
+      <td class="num" style="color:#0d9488">${r.closingCalc.toLocaleString()}</td>
+      <td class="num ${r.stock > 0 ? 'stock-pos' : r.stock < 0 ? 'stock-neg' : 'stock-zero'}">${r.stock.toLocaleString()}</td>
+    </tr>`).join('');
+
+  // Totals footer
+  const tot = rows.reduce((a, r) => ({
+    opening:    a.opening    + r.opening,
+    production: a.production + r.production,
+    order:      a.order      + r.order,
+    sales:      a.sales      + r.sales,
+    closing:    a.closing    + r.closing,
+    closingCalc:a.closingCalc + r.closingCalc,
+    stock:      a.stock      + r.stock
+  }), { opening:0, production:0, order:0, sales:0, closing:0, closingCalc:0, stock:0 });
+
+  const fStyle = 'padding:10px 14px;font-size:12px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);background:rgba(255,255,255,0.04)';
+  const fNum   = fStyle + ';font-family:\'JetBrains Mono\',monospace;text-align:right';
+  const fLabel = fStyle + ';font-family:\'Outfit\',sans-serif;text-align:left';
+  const fStock = tot.stock > 0 ? '#22c55e' : tot.stock < 0 ? '#ef4444' : '#7d8590';
+  document.getElementById('pivotFoot').innerHTML = `<tr>
+    <td style="${fLabel}" colspan="2">TOTAL</td>
+    <td style="${fNum};color:#3b82f6">${tot.opening.toLocaleString()}</td>
+    <td style="${fNum};color:#22c55e">${tot.production.toLocaleString()}</td>
+    <td style="${fNum};color:#f59e0b">${tot.order.toLocaleString()}</td>
+    <td style="${fNum};color:#ef4444">${tot.sales.toLocaleString()}</td>
+    <td style="${fNum};color:#0d9488">${tot.closingCalc.toLocaleString()}</td>
+    <td style="${fNum};color:${fStock};font-weight:700">${tot.stock.toLocaleString()}</td>
+  </tr>`;
+}
+
+// ── Charts ─────────────────────────────────────────────
+function renderCharts(filtered) {
+  // Bar: Stock by Product (pivot)
+  const prodMap = {};
+  filtered.forEach(r => {
+    if (!prodMap[r.product]) prodMap[r.product] = { opening: 0, production: 0, order: 0, sales: 0 };
+    const d = r.department.toLowerCase().trim();
+    if (d === 'opening stock')  prodMap[r.product].opening    += r.quantity;
+    else if (d === 'production') prodMap[r.product].production += r.quantity;
+    else if (d === 'order')      prodMap[r.product].order      += r.quantity;
+    else if (d === 'sales')      prodMap[r.product].sales      += r.quantity;
+  });
+  const products   = Object.keys(prodMap);
+  const stockVals  = products.map(p => {
+    const m = prodMap[p];
+    return m.opening + m.production - m.order - m.sales;
+  });
+
+  const barCtx = document.getElementById('chartBar').getContext('2d');
+  if (barChart) barChart.destroy();
+  barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: products,
+      datasets: [{
+        label: 'Stock',
+        data: stockVals,
+        backgroundColor: stockVals.map(v => v >= 0 ? 'rgba(168,85,247,0.7)' : 'rgba(239,68,68,0.7)'),
+        borderColor:     stockVals.map(v => v >= 0 ? '#a855f7' : '#ef4444'),
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7d8590', font: { size: 11 } }, grid: { color: '#1c2230' } },
+        y: { ticks: { color: '#7d8590', font: { size: 11 } }, grid: { color: '#263044' } }
+      }
+    }
+  });
+
+  // Doughnut: department mix
+  const depts = ['Opening Stock','Production','Order','Sales','Closing Stock'];
+  const deptVals = depts.map(d =>
+    filtered.filter(r => r.department.toLowerCase().trim() === d.toLowerCase()).reduce((a,r) => a+r.quantity, 0)
+  );
+  const dCtx = document.getElementById('chartDoughnut').getContext('2d');
+  if (doughnutChart) doughnutChart.destroy();
+  doughnutChart = new Chart(dCtx, {
+    type: 'doughnut',
+    data: {
+      labels: depts,
+      datasets: [{
+        data: deptVals,
+        backgroundColor: ['rgba(59,130,246,0.8)','rgba(34,197,94,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)','rgba(13,148,136,0.8)'],
+        borderColor: '#161b22',
+        borderWidth: 2,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#a0aab8', font: { size: 11 }, padding: 12, boxWidth: 10 }
+        }
+      }
+    }
+  });
+}
+
+// ── Helpers ────────────────────────────────────────────
+function fmt(n) { return n.toLocaleString('en-IN'); }
+
+function parseDateKey(d) {
+  // dd/MM/yyyy → yyyyMMdd for sort
+  if (!d) return '0';
+  const p = d.split('/');
+  return p.length === 3 ? `${p[2]}${p[1]}${p[0]}` : d;
+}
+
+function deptBadge(dept) {
+  const d = (dept || '').toLowerCase().trim();
+  let cls = 'dept-other';
+  if (d === 'opening stock')  cls = 'dept-opening';
+  else if (d === 'production') cls = 'dept-production';
+  else if (d === 'order')      cls = 'dept-order';
+  else if (d === 'sales')      cls = 'dept-sales';
+  else if (d === 'closing stock') cls = 'dept-closing';
+  return `<span class="dept-badge ${cls}">${dept}</span>`;
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '↕');
+  const icon = document.getElementById(`sort-${col}`);
+  if (icon) icon.textContent = sortDir === 1 ? '↑' : '↓';
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const ths = document.querySelectorAll('thead th');
+  ths.forEach(th => { if (th.querySelector(`#sort-${col}`)) th.classList.add('sorted'); });
+  render();
+}
+
+function setTableLoading() {
+  document.getElementById('tableBody').innerHTML =
+    `<tr><td colspan="7"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+  document.getElementById('pivotBody').innerHTML =
+    `<tr><td colspan="8"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+  document.getElementById('rowCount').textContent = '—';
+  document.getElementById('pivotCount').textContent = '—';
+}
+function setTableEmpty(msg) {
+  document.getElementById('tableBody').innerHTML =
+    `<tr><td colspan="7"><div class="state-box">${msg}</div></td></tr>`;
+  document.getElementById('pivotBody').innerHTML =
+    `<tr><td colspan="8"><div class="state-box">${msg}</div></td></tr>`;
+  document.getElementById('rowCount').textContent = '0 rows';
+  document.getElementById('pivotCount').textContent = '0 products';
+}
+
+function resetFilters() {
+  ['fFrom','fTo','fSegment','fProduct','fName'].forEach(id =>
+    document.getElementById(id).value = '');
+  render();
+}
+
+// ── Init ───────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
