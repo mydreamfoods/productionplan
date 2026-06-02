@@ -591,19 +591,18 @@ function render() {
   const order      = sum('order');
   const sales      = sum('sales');
   const stock      = opening + production - order - sales;
-  const closing    = stock < 0 ? 0 : stock;
 
   document.getElementById('kOpening').textContent    = fmt(opening);
   document.getElementById('kProduction').textContent  = fmt(production);
   document.getElementById('kOrder').textContent       = fmt(order);
   document.getElementById('kSales').textContent       = fmt(sales);
-  document.getElementById('kClosing').textContent     = fmt(closing);
+  // kClosing set inside renderPivot
   const kStockEl = document.getElementById('kStock');
   kStockEl.textContent = fmt(stock);
   kStockEl.style.color = stock < 0 ? 'var(--red)' : stock === 0 ? 'var(--muted)' : 'var(--purple)';
 
-  // Pivot summary table
-  renderPivot(filtered);
+  // Pivot summary table — also returns closing stock sum
+  const closing = renderPivot(filtered);
 
   // Sort entries
   rows.sort((a, b) => {
@@ -660,7 +659,7 @@ function renderPivot(filtered) {
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="8"><div class="state-box">No data</div></td></tr>';
     document.getElementById('pivotFoot').innerHTML = '';
-    return;
+    return 0;
   }
 
   tbody.innerHTML = rows.map(r => `
@@ -690,6 +689,8 @@ function renderPivot(filtered) {
   const fNum   = fStyle + ';font-family:\'JetBrains Mono\',monospace;text-align:right';
   const fLabel = fStyle + ';font-family:\'Outfit\',sans-serif;text-align:left';
   const fStock = tot.stock > 0 ? '#22c55e' : tot.stock < 0 ? '#ef4444' : '#7d8590';
+  document.getElementById('kClosing').textContent = fmt(tot.closingCalc);
+
   document.getElementById('pivotFoot').innerHTML = `<tr>
     <td style="${fLabel}" colspan="2">TOTAL</td>
     <td style="${fNum};color:#3b82f6">${tot.opening.toLocaleString()}</td>
