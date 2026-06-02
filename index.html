@@ -316,7 +316,7 @@
   </div>
   <div class="topbar-right">
     <span id="lastRefresh"></span>
-    <a class="btn-form-link" href="https://mydreamfoods.github.io/productionplan/productionplanningform.html" target="_blank">+ New Entry</a>
+    <a class="btn-form-link" href="https://script.google.com/macros/s/AKfycbxfcWADNwzwojx4Hyg8Ww86Difl7zmwB6tBY0sRMZRJeiyJQ9PRd2T0MKPGxW6XulPohQ/exec" target="_blank">+ New Entry</a>
     <button class="btn-refresh" onclick="loadData()">⟳ Refresh</button>
   </div>
 </div>
@@ -833,6 +833,9 @@ function resetFilters() {
 }
 
 // ── Init ───────────────────────────────────────────────
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('fFrom').value = todayStr;
+document.getElementById('fTo').value   = todayStr;
 loadData();
 </script>
 </body>
