@@ -390,7 +390,7 @@
       <div class="kpi-icon">🏪</div>
       <div class="kpi-label">Closing Stock</div>
       <div class="kpi-val" id="kClosing">—</div>
-      <div class="kpi-sub">Units closing</div>
+      <div class="kpi-sub">Opening + Prod − Sales</div>
     </div>
     <div class="kpi purple">
       <div class="kpi-icon">📊</div>
@@ -651,7 +651,7 @@ function renderPivot(filtered) {
   const rows = Object.values(map).sort((a,b) =>
     a.segment.localeCompare(b.segment) || a.product.localeCompare(b.product)
   );
-  rows.forEach(r => { r.stock = r.opening + r.production - r.order - r.sales; r.closingCalc = r.stock < 0 ? 0 : r.stock; });
+  rows.forEach(r => { r.stock = r.opening + r.production - r.order - r.sales; const cs = r.opening + r.production - r.sales; r.closingCalc = cs < 0 ? 0 : cs; });
 
   document.getElementById('pivotCount').textContent = rows.length + ' products';
 
