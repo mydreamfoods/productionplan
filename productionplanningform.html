@@ -100,7 +100,7 @@
   .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
   .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   /* Product row: segment + product + quantity */
-  .g-product { display: grid; grid-template-columns: 120px 1fr 80px; gap: 14px; }
+  .g-product { display: grid; grid-template-columns: 160px 1fr 100px; gap: 14px; }
 
   /* ── Field ── */
   .field { display: flex; flex-direction: column; gap: 6px; }
@@ -386,37 +386,46 @@
   // Default date
   document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
-  // ── Init: load both users & products ──────────────────
+  // ── Fetch helper: redirect-safe, with retry ──────────
+  async function safeFetch(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(url, { redirect: 'follow' });
+        const json = await res.json();
+        if (json.success) return json;
+        throw new Error(json.error || 'Server error');
+      } catch (err) {
+        if (i === retries - 1) throw err;
+        await new Promise(r => setTimeout(r, 1000 * (i + 1))); // 1s, 2s backoff
+      }
+    }
+  }
+
+  // ── Init: load users & products sequentially on mobile ─
   async function init() {
-    const lb  = document.getElementById('loadBanner');
-    const eb  = document.getElementById('errBanner');
-    const lm  = document.getElementById('loadMsg');
+    const lb = document.getElementById('loadBanner');
+    const eb = document.getElementById('errBanner');
+    const lm = document.getElementById('loadMsg');
     lb.style.display = 'flex';
     eb.style.display = 'none';
 
     try {
-      lm.textContent = 'Loading users & products…';
-      const [uRes, pRes] = await Promise.all([
-        fetch(`${GAS_URL}?action=getUsers`),
-        fetch(`${GAS_URL}?action=getProducts`)
-      ]);
-      const [uJson, pJson] = await Promise.all([uRes.json(), pRes.json()]);
+      lm.textContent = 'Loading users…';
+      const uJson = await safeFetch(`${GAS_URL}?action=getUsers`);
+      allUsers = uJson.users;
 
-      if (!uJson.success) throw new Error('Users: ' + (uJson.error || 'unknown'));
-      if (!pJson.success) throw new Error('Products: ' + (pJson.error || 'unknown'));
-
-      allUsers    = uJson.users;
-      allProducts = pJson.products;
-
-      // Populate name dropdown
+      // Populate name dropdown immediately
       const nameSel = document.getElementById('name');
       nameSel.innerHTML = '<option value="">— Select Name —</option>';
       allUsers.forEach(u => {
         const o = document.createElement('option');
-        o.value       = u.name;
-        o.textContent = u.name;
+        o.value = o.textContent = u.name;
         nameSel.appendChild(o);
       });
+
+      lm.textContent = 'Loading products…';
+      const pJson = await safeFetch(`${GAS_URL}?action=getProducts`);
+      allProducts = pJson.products;
 
       // Populate segment dropdown
       const segs   = [...new Set(allProducts.map(p => p.segment))].sort();
