@@ -24,6 +24,8 @@
     --purple-s: rgba(168,85,247,0.1);
     --teal:    #0d9488;
     --teal-s:  rgba(13,148,136,0.1);
+    --orange:   #f97316;
+    --orange-s: rgba(249,115,22,0.1);
     --text:     #e6edf3;
     --muted:    #7d8590;
     --label:    #a0aab8;
@@ -79,7 +81,7 @@
   .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── Layout ── */
-  .page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px; }
 
   /* ── Filter Bar ── */
   .filters {
@@ -127,7 +129,7 @@
   /* ── KPI Cards ── */
   .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 12px;
     margin-bottom: 20px;
   }
@@ -152,6 +154,7 @@
   .kpi.red::before    { background: var(--red); }
   .kpi.purple::before { background: var(--purple); }
   .kpi.teal::before   { background: var(--teal); }
+  .kpi.orange::before { background: var(--orange); }
 
   .kpi-icon { font-size: 18px; margin-bottom: 10px; }
   .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
@@ -165,6 +168,7 @@
   .kpi.red    .kpi-val { color: var(--red); }
   .kpi.purple .kpi-val { color: var(--purple); }
   .kpi.teal   .kpi-val { color: var(--teal); }
+  .kpi.orange .kpi-val { color: var(--orange); }
   .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   /* ── Charts row ── */
@@ -212,7 +216,7 @@
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead th {
     background: var(--surface2);
-    padding: 10px 14px;
+    padding: 10px 10px;
     text-align: left;
     font-size: 11px; font-weight: 600;
     color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
@@ -229,7 +233,7 @@
   }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
-  tbody td { padding: 10px 14px; color: var(--label); white-space: nowrap; }
+  tbody td { padding: 10px 10px; color: var(--label); white-space: nowrap; }
   tbody td.date-col {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px; color: var(--muted);
@@ -250,9 +254,13 @@
     white-space: nowrap;
   }
   /* tfoot styles handled inline */
-  .stock-pos { color: var(--green);  font-weight: 600; }
-  .stock-neg { color: var(--red);    font-weight: 600; }
-  .stock-zero{ color: var(--muted); }
+  .stock-pos  { color: var(--teal);   font-weight: 600; }
+  .stock-neg  { color: var(--red);    font-weight: 600; }
+  .stock-zero { color: var(--muted); }
+  .pend-pos   { color: var(--orange); font-weight: 600; }
+  .pend-zero  { color: var(--muted); }
+  .req-neg    { color: var(--red);    font-weight: 600; }
+  .req-zero   { color: var(--muted); }
 
   .dept-badge {
     display: inline-block;
@@ -293,17 +301,112 @@
     align-items: center; gap: 10px;
   }
 
+  @media(max-width:1100px) {
+    .kpi-grid { grid-template-columns: repeat(4,1fr); }
+  }
   @media(max-width:900px) {
     .kpi-grid { grid-template-columns: repeat(3,1fr); }
-    .kpi-grid .kpi:last-child { grid-column: span 1; }
     .charts-row { grid-template-columns: 1fr; }
   }
   @media(max-width:600px) {
     .kpi-grid { grid-template-columns: repeat(2,1fr); }
-    .kpi-grid .kpi:last-child { grid-column: span 2; }
     .topbar { padding: 0 16px; }
     .page { padding: 16px 12px 60px; }
   }
+
+.clickable-kpi{
+    cursor:pointer;
+    transition:.25s;
+}
+.clickable-kpi:hover{
+    transform:translateY(-4px);
+    border-color:#a855f7;
+    box-shadow:0 10px 25px rgba(168,85,247,.25);
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(4px);
+    z-index:99999;
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-box{
+    width:90%;
+    max-width:900px;
+    background:#161b22;
+    border:1px solid #263044;
+    border-radius:16px;
+    overflow:hidden;
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 22px;
+    border-bottom:1px solid #263044;
+}
+
+.modal-header h3{
+    color:#ef4444;
+}
+
+.modal-header button{
+    background:none;
+    border:none;
+    color:#fff;
+    font-size:22px;
+    cursor:pointer;
+}
+
+.modal-body{
+    max-height:500px;
+    overflow:auto;
+}
+
+.neg-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.neg-table th,
+.neg-table td{
+    padding:12px 15px;
+    border-bottom:1px solid #263044;
+}
+
+.neg-table th{
+    background:#1c2230;
+}
+
+.neg-stock{
+    color:#ef4444;
+    font-weight:700;
+}
+
+.p-sort-icon{
+    margin-left:5px;
+    opacity:.4;
+    font-size:10px;
+}
+
+.pivot-sorted{
+    background:rgba(59,130,246,.12) !important;
+}
+
+.pivot-sorted .p-sort-icon{
+    opacity:1;
+    color:#3b82f6;
+}
+
+#pivotBody tr:hover{
+    background:#1c2230;
+}
 </style>
 </head>
 <body>
@@ -374,12 +477,6 @@
       <div class="kpi-val" id="kProduction">—</div>
       <div class="kpi-sub">Units produced</div>
     </div>
-    <div class="kpi amber">
-      <div class="kpi-icon">📋</div>
-      <div class="kpi-label">Order</div>
-      <div class="kpi-val" id="kOrder">—</div>
-      <div class="kpi-sub">Units ordered</div>
-    </div>
     <div class="kpi red">
       <div class="kpi-icon">🛒</div>
       <div class="kpi-label">Sales</div>
@@ -390,20 +487,32 @@
       <div class="kpi-icon">🏪</div>
       <div class="kpi-label">Closing Stock</div>
       <div class="kpi-val" id="kClosing">—</div>
-      <div class="kpi-sub">Opening + Prod − Sales</div>
+      <div class="kpi-sub">Units closing</div>
     </div>
-    <div class="kpi purple">
-      <div class="kpi-icon">📊</div>
-      <div class="kpi-label">Net Stock</div>
+    <div class="kpi amber">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-label">Order</div>
+      <div class="kpi-val" id="kOrder">—</div>
+      <div class="kpi-sub">Units ordered</div>
+    </div>
+   <div class="kpi orange">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-label">Pending Order</div>
+      <div class="kpi-val" id="kPending">—</div>
+      <div class="kpi-sub">Order − Sales</div>
+    </div>
+   <div class="kpi purple clickable-kpi" onclick="showNegativeStockPopup()">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-label">Required Stock</div>
       <div class="kpi-val" id="kStock">—</div>
-      <div class="kpi-sub">Opening + Prod − Order − Sales</div>
+      <div class="kpi-sub" id="kStockSub">Closing − Pending (if &lt;0)</div>
     </div>
   </div>
 
   <!-- Charts -->
   <div class="charts-row">
     <div class="chart-card">
-      <div class="chart-title">Stock by Product</div>
+      <div class="chart-title">Closing Stock by Product</div>
       <div class="chart-wrap" style="height:220px;">
         <canvas id="chartBar"></canvas>
       </div>
@@ -426,18 +535,46 @@
       <table>
         <thead>
           <tr>
-            <th>Segment</th>
-            <th>Product</th>
-            <th style="text-align:right;color:#3b82f6;">Opening Stock</th>
-            <th style="text-align:right;color:#22c55e;">Production</th>
-            <th style="text-align:right;color:#f59e0b;">Order</th>
-            <th style="text-align:right;color:#ef4444;">Sales</th>
-            <th style="text-align:right;color:#0d9488;">Closing Stock</th>
-            <th style="text-align:right;color:#a855f7;">Net Stock</th>
+            
+    <th onclick="sortPivot('segment')" id="p-sort-segment">
+  Segment <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('product')" id="p-sort-product">
+  Product <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('opening')" id="p-sort-opening" style="text-align:right;color:#3b82f6;">
+  Opening <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('production')" id="p-sort-production" style="text-align:right;color:#22c55e;">
+  Production <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('sales')" id="p-sort-sales" style="text-align:right;color:#ef4444;">
+  Sales <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('closingCalc')" id="p-sort-closingCalc" style="text-align:right;color:#0d9488;">
+  Closing Stock <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('order')" id="p-sort-order" style="text-align:right;color:#f59e0b;">
+  Order <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('pending')" id="p-sort-pending" style="text-align:right;color:#f97316;">
+  Pending Order <span class="p-sort-icon">↕</span>
+</th>
+
+<th onclick="sortPivot('required')" id="p-sort-required" style="text-align:right;color:#a855f7;">
+  Required Stock <span class="p-sort-icon">↕</span>
+</th>
           </tr>
         </thead>
         <tbody id="pivotBody">
-          <tr><td colspan="8"><div class="state-box"><div class="spin"></div>Loading…</div></td></tr>
+          <tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading…</div></td></tr>
         </tbody>
         <tfoot id="pivotFoot"></tfoot>
       </table>
@@ -460,7 +597,9 @@
             <th onclick="sortBy('product')">Product <span class="sort-icon" id="sort-product">↕</span></th>
             <th onclick="sortBy('department')">Department <span class="sort-icon" id="sort-department">↕</span></th>
             <th onclick="sortBy('quantity')" style="text-align:right;">Qty <span class="sort-icon" id="sort-quantity">↕</span></th>
-            <th style="text-align:right;">Stock</th>
+            <th style="text-align:right;color:#0d9488;">Closing</th>
+            <th style="text-align:right;color:#f97316;">Pending</th>
+            <th style="text-align:right;color:#a855f7;">Required</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -474,12 +613,55 @@
 
 </div>
 
+<div id="negativeStockModal" class="modal">
+  <div class="modal-box">
+    
+    <div class="modal-header">
+  <h3>⚠ Negative Stock Products</h3>
+
+  <div style="display:flex;align-items:center;gap:15px;">
+    
+    <span id="negativeCount"
+      style="
+        background:rgba(239,68,68,.15);
+        color:#ef4444;
+        padding:6px 12px;
+        border-radius:30px;
+        font-size:13px;
+        font-weight:600;
+      ">
+      0 Products
+    </span>
+
+    <button onclick="closeNegativeStockPopup()">✕</button>
+
+  </div>
+</div>
+
+    <div class="modal-body">
+      <table class="neg-table">
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th>Product</th>
+            <th>Required Stock</th>
+          </tr>
+        </thead>
+        <tbody id="negativeStockBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxfcWADNwzwojx4Hyg8Ww86Difl7zmwB6tBY0sRMZRJeiyJQ9PRd2T0MKPGxW6XulPohQ/exec';
 
 let rawRows  = [];   // from GAS
 let sortCol  = 'date';
-let sortDir  = 1;    // 1=asc, -1=desc
+let sortDir  = 1; 
+let pivotSortCol = 'stock';  // 1=asc, -1=desc
+let pivotSortDir = -1;  
 let barChart, doughnutChart;
 
 // ── Load ──────────────────────────────────────────────
@@ -556,25 +738,40 @@ function getFiltered() {
   });
 }
 
-// ── Calculate Stock per row group (Date+Segment+Product) ──
+// ── Core formulas ──────────────────────────────────────
+// closing  = max(0, opening + production - sales)
+// pending  = order - sales
+// required = min(0, closing - pending)  → only meaningful if < 0
+
+function calcClosing(opening, production, sales) {
+  return Math.max(0, opening + production - sales);
+}
+function calcPending(order, sales) {
+  return order - sales;
+}
+function calcRequired(closing, pending) {
+  return closing - pending;
+}
+
+// ── Attach row-level metrics (pivot by Date+Segment+Product) ──
 function calcStock(filtered) {
-  // Build pivot: key → {opening, production, order, sales}
   const pivot = {};
   filtered.forEach(r => {
     const key = `${r.date}||${r.segment}||${r.product}`;
     if (!pivot[key]) pivot[key] = { opening: 0, production: 0, order: 0, sales: 0 };
     const d = r.department.toLowerCase().trim();
-    if (d === 'opening stock') pivot[key].opening    += r.quantity;
-    else if (d === 'production') pivot[key].production += r.quantity;
-    else if (d === 'order')      pivot[key].order      += r.quantity;
-    else if (d === 'sales')      pivot[key].sales      += r.quantity;
+    if      (d === 'opening stock') pivot[key].opening    += r.quantity;
+    else if (d === 'production')    pivot[key].production += r.quantity;
+    else if (d === 'order')         pivot[key].order      += r.quantity;
+    else if (d === 'sales')         pivot[key].sales      += r.quantity;
   });
-  // Attach stock to each row
   return filtered.map(r => {
     const key = `${r.date}||${r.segment}||${r.product}`;
     const p   = pivot[key] || {};
-    const stock = (p.opening || 0) + (p.production || 0) - (p.order || 0) - (p.sales || 0);
-    return { ...r, stock };
+    const closing  = calcClosing(p.opening||0, p.production||0, p.sales||0);
+    const pending  = calcPending(p.order||0, p.sales||0);
+    const required = calcRequired(closing, pending);
+    return { ...r, closing, pending, required };
   });
 }
 
@@ -590,19 +787,29 @@ function render() {
   const production = sum('production');
   const order      = sum('order');
   const sales      = sum('sales');
-  const stock      = opening + production - order - sales;
+  const closing    = calcClosing(opening, production, sales);
+  const pending    = calcPending(order, sales);
+  const required   = calcRequired(closing, pending);
 
   document.getElementById('kOpening').textContent    = fmt(opening);
   document.getElementById('kProduction').textContent  = fmt(production);
   document.getElementById('kOrder').textContent       = fmt(order);
   document.getElementById('kSales').textContent       = fmt(sales);
-  // kClosing set inside renderPivot
-  const kStockEl = document.getElementById('kStock');
-  kStockEl.textContent = fmt(stock);
-  kStockEl.style.color = stock < 0 ? 'var(--red)' : stock === 0 ? 'var(--muted)' : 'var(--purple)';
+  document.getElementById('kClosing').textContent     = fmt(closing);
 
-  // Pivot summary table — also returns closing stock sum
-  const closing = renderPivot(filtered);
+  const kPendEl = document.getElementById('kPending');
+  // Sum only positive pending per product (not global order-sales which can net out)
+  kPendEl.textContent = fmt(pending > 0 ? pending : 0);
+  kPendEl.style.color = pending > 0 ? 'var(--orange)' : 'var(--muted)';
+
+  // kStock — will be updated by renderPivot with deficit product count + shortage
+  const kStockEl = document.getElementById('kStock');
+  kStockEl.textContent = '—';
+  kStockEl.style.color = 'var(--muted)';
+  document.getElementById('kStockSub').textContent = 'Closing − Pending (if <0)';
+
+  // Pivot summary table
+  renderPivot(filtered);
 
   // Sort entries
   rows.sort((a, b) => {
@@ -626,7 +833,9 @@ function render() {
       <td>${r.product}</td>
       <td>${deptBadge(r.department)}</td>
       <td class="num">${r.quantity.toLocaleString()}</td>
-      <td class="num ${r.stock > 0 ? 'stock-pos' : r.stock < 0 ? 'stock-neg' : 'stock-zero'}">${r.stock.toLocaleString()}</td>
+      <td class="num ${r.closing > 0 ? 'stock-pos' : 'stock-zero'}">${r.closing.toLocaleString()}</td>
+      <td class="num ${r.pending > 0 ? 'pend-pos' : 'pend-zero'}">${r.pending.toLocaleString()}</td>
+      <td class="num ${r.required < 0 ? 'req-neg' : 'req-zero'}">${r.required < 0 ? r.required.toLocaleString() : '—'}</td>
     </tr>`).join('');
 
   // Charts
@@ -639,27 +848,58 @@ function renderPivot(filtered) {
   const map = {};
   filtered.forEach(r => {
     const key = r.segment + '||' + r.product;
-    if (!map[key]) map[key] = { segment: r.segment, product: r.product, opening: 0, production: 0, order: 0, sales: 0, closing: 0 };
+    if (!map[key]) map[key] = { segment: r.segment, product: r.product, opening: 0, production: 0, order: 0, sales: 0 };
     const d = r.department.toLowerCase().trim();
-    if      (d === 'opening stock')  map[key].opening    += r.quantity;
-    else if (d === 'production')      map[key].production += r.quantity;
-    else if (d === 'order')           map[key].order      += r.quantity;
-    else if (d === 'sales')           map[key].sales      += r.quantity;
-    else if (d === 'closing stock')   map[key].closing    += r.quantity;
+    if      (d === 'opening stock') map[key].opening    += r.quantity;
+    else if (d === 'production')    map[key].production += r.quantity;
+    else if (d === 'order')         map[key].order      += r.quantity;
+    else if (d === 'sales')         map[key].sales      += r.quantity;
   });
 
-  const rows = Object.values(map).sort((a,b) =>
-    a.segment.localeCompare(b.segment) || a.product.localeCompare(b.product)
-  );
-  rows.forEach(r => { r.stock = r.opening + r.production - r.order - r.sales; const cs = r.opening + r.production - r.sales; r.closingCalc = cs < 0 ? 0 : cs; });
+  const rows = Object.values(map);
+
+  rows.forEach(r => {
+    r.closingCalc = calcClosing(r.opening, r.production, r.sales);
+    r.pending     = calcPending(r.order, r.sales);
+    r.required    = calcRequired(r.closingCalc, r.pending);
+    // keep r.stock as alias for required for sort compatibility
+    r.stock       = r.required;
+  });
+
+  rows.sort((a,b) => {
+    let av = a[pivotSortCol];
+    let bv = b[pivotSortCol];
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    return av < bv ? -pivotSortDir : av > bv ? pivotSortDir : 0;
+  });
 
   document.getElementById('pivotCount').textContent = rows.length + ' products';
 
+  // Update Required Stock KPI
+  const deficitRows = rows.filter(r => r.required < 0);
+  const totalShortageKpi = deficitRows.reduce((s, r) => s + Math.abs(r.required), 0);
+  const kStockEl = document.getElementById('kStock');
+  if (deficitRows.length > 0) {
+    kStockEl.textContent = `-${fmt(totalShortageKpi)}`;
+    kStockEl.style.color = 'var(--red)';
+    document.getElementById('kStockSub').textContent = `${deficitRows.length} Products | Shortage ${fmt(totalShortageKpi)}`;
+  } else {
+    kStockEl.textContent = '—';
+    kStockEl.style.color = 'var(--muted)';
+    document.getElementById('kStockSub').textContent = 'Closing − Pending (if <0)';
+  }
+
+  // Update Pending Order KPI — sum only positive pending per product
+  const positivePending = rows.filter(r => r.pending > 0).reduce((s, r) => s + r.pending, 0);
+  const kPendEl2 = document.getElementById('kPending');
+  kPendEl2.textContent = fmt(positivePending);
+  kPendEl2.style.color = positivePending > 0 ? 'var(--orange)' : 'var(--muted)';
+
   const tbody = document.getElementById('pivotBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="state-box">No data</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="state-box">No data</div></td></tr>';
     document.getElementById('pivotFoot').innerHTML = '';
-    return 0;
+    return;
   }
 
   tbody.innerHTML = rows.map(r => `
@@ -668,10 +908,11 @@ function renderPivot(filtered) {
       <td><strong>${r.product}</strong></td>
       <td class="num" style="color:#3b82f6">${r.opening    ? r.opening.toLocaleString()    : '—'}</td>
       <td class="num" style="color:#22c55e">${r.production ? r.production.toLocaleString() : '—'}</td>
-      <td class="num" style="color:#f59e0b">${r.order      ? r.order.toLocaleString()      : '—'}</td>
       <td class="num" style="color:#ef4444">${r.sales      ? r.sales.toLocaleString()      : '—'}</td>
       <td class="num" style="color:#0d9488">${r.closingCalc.toLocaleString()}</td>
-      <td class="num ${r.stock > 0 ? 'stock-pos' : r.stock < 0 ? 'stock-neg' : 'stock-zero'}">${r.stock.toLocaleString()}</td>
+      <td class="num" style="color:#f59e0b">${r.order      ? r.order.toLocaleString()      : '—'}</td>
+      <td class="num ${r.pending > 0 ? 'pend-pos' : 'pend-zero'}">${r.pending.toLocaleString()}</td>
+      <td class="num ${r.required < 0 ? 'req-neg' : 'req-zero'}">${r.required < 0 ? r.required.toLocaleString() : '—'}</td>
     </tr>`).join('');
 
   // Totals footer
@@ -680,25 +921,25 @@ function renderPivot(filtered) {
     production: a.production + r.production,
     order:      a.order      + r.order,
     sales:      a.sales      + r.sales,
-    closing:    a.closing    + r.closing,
     closingCalc:a.closingCalc + r.closingCalc,
-    stock:      a.stock      + r.stock
-  }), { opening:0, production:0, order:0, sales:0, closing:0, closingCalc:0, stock:0 });
+    pending:    a.pending    + r.pending,
+    required:   a.required   + r.required,
+  }), { opening:0, production:0, order:0, sales:0, closingCalc:0, pending:0, required:0 });
 
   const fStyle = 'padding:10px 14px;font-size:12px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);background:rgba(255,255,255,0.04)';
-  const fNum   = fStyle + ';font-family:\'JetBrains Mono\',monospace;text-align:right';
-  const fLabel = fStyle + ';font-family:\'Outfit\',sans-serif;text-align:left';
-  const fStock = tot.stock > 0 ? '#22c55e' : tot.stock < 0 ? '#ef4444' : '#7d8590';
-  document.getElementById('kClosing').textContent = fmt(tot.closingCalc);
+  const fNum   = fStyle + ";font-family:'JetBrains Mono',monospace;text-align:right";
+  const fLabel = fStyle + ";font-family:'Outfit',sans-serif;text-align:left";
+  const fReq   = tot.required < 0 ? '#ef4444' : '#7d8590';
 
   document.getElementById('pivotFoot').innerHTML = `<tr>
     <td style="${fLabel}" colspan="2">TOTAL</td>
     <td style="${fNum};color:#3b82f6">${tot.opening.toLocaleString()}</td>
     <td style="${fNum};color:#22c55e">${tot.production.toLocaleString()}</td>
-    <td style="${fNum};color:#f59e0b">${tot.order.toLocaleString()}</td>
     <td style="${fNum};color:#ef4444">${tot.sales.toLocaleString()}</td>
     <td style="${fNum};color:#0d9488">${tot.closingCalc.toLocaleString()}</td>
-    <td style="${fNum};color:${fStock};font-weight:700">${tot.stock.toLocaleString()}</td>
+    <td style="${fNum};color:#f59e0b">${tot.order.toLocaleString()}</td>
+    <td style="${fNum};color:${rows.filter(r=>r.pending>0).reduce((s,r)=>s+r.pending,0) > 0 ? '#f97316' : '#7d8590'}">${fmt(rows.filter(r=>r.pending>0).reduce((s,r)=>s+r.pending,0))}</td>
+    <td style="${fNum};color:${fReq};font-weight:700">${tot.required < 0 ? tot.required.toLocaleString() : '—'}</td>
   </tr>`;
 }
 
@@ -717,7 +958,7 @@ function renderCharts(filtered) {
   const products   = Object.keys(prodMap);
   const stockVals  = products.map(p => {
     const m = prodMap[p];
-    return m.opening + m.production - m.order - m.sales;
+    return calcClosing(m.opening, m.production, m.sales);
   });
 
   const barCtx = document.getElementById('chartBar').getContext('2d');
@@ -727,10 +968,10 @@ function renderCharts(filtered) {
     data: {
       labels: products,
       datasets: [{
-        label: 'Stock',
+        label: 'Closing Stock',
         data: stockVals,
-        backgroundColor: stockVals.map(v => v >= 0 ? 'rgba(168,85,247,0.7)' : 'rgba(239,68,68,0.7)'),
-        borderColor:     stockVals.map(v => v >= 0 ? '#a855f7' : '#ef4444'),
+        backgroundColor: 'rgba(13,148,136,0.7)',
+        borderColor: '#0d9488',
         borderWidth: 1,
         borderRadius: 4,
       }]
@@ -746,7 +987,7 @@ function renderCharts(filtered) {
   });
 
   // Doughnut: department mix
-  const depts = ['Opening Stock','Production','Order','Sales','Closing Stock'];
+  const depts = ['Opening Stock','Production','Order','Sales'];
   const deptVals = depts.map(d =>
     filtered.filter(r => r.department.toLowerCase().trim() === d.toLowerCase()).reduce((a,r) => a+r.quantity, 0)
   );
@@ -758,7 +999,7 @@ function renderCharts(filtered) {
       labels: depts,
       datasets: [{
         data: deptVals,
-        backgroundColor: ['rgba(59,130,246,0.8)','rgba(34,197,94,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)','rgba(13,148,136,0.8)'],
+        backgroundColor: ['rgba(59,130,246,0.8)','rgba(34,197,94,0.8)','rgba(245,158,11,0.8)','rgba(239,68,68,0.8)'],
         borderColor: '#161b22',
         borderWidth: 2,
         hoverOffset: 6
@@ -812,17 +1053,17 @@ function sortBy(col) {
 
 function setTableLoading() {
   document.getElementById('tableBody').innerHTML =
-    `<tr><td colspan="7"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+    `<tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
   document.getElementById('pivotBody').innerHTML =
-    `<tr><td colspan="8"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+    `<tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
   document.getElementById('rowCount').textContent = '—';
   document.getElementById('pivotCount').textContent = '—';
 }
 function setTableEmpty(msg) {
   document.getElementById('tableBody').innerHTML =
-    `<tr><td colspan="7"><div class="state-box">${msg}</div></td></tr>`;
+    `<tr><td colspan="9"><div class="state-box">${msg}</div></td></tr>`;
   document.getElementById('pivotBody').innerHTML =
-    `<tr><td colspan="8"><div class="state-box">${msg}</div></td></tr>`;
+    `<tr><td colspan="9"><div class="state-box">${msg}</div></td></tr>`;
   document.getElementById('rowCount').textContent = '0 rows';
   document.getElementById('pivotCount').textContent = '0 products';
 }
@@ -838,6 +1079,104 @@ const todayStr = new Date().toISOString().split('T')[0];
 document.getElementById('fFrom').value = todayStr;
 document.getElementById('fTo').value   = todayStr;
 loadData();
+
+function showNegativeStockPopup(){
+
+    const filtered = getFiltered();
+
+    const map = {};
+
+    filtered.forEach(r => {
+        const key = r.segment + '||' + r.product;
+        if(!map[key]){
+            map[key] = { segment:r.segment, product:r.product, opening:0, production:0, order:0, sales:0 };
+        }
+        const d = r.department.toLowerCase().trim();
+        if(d === 'opening stock') map[key].opening += r.quantity;
+        else if(d === 'production') map[key].production += r.quantity;
+        else if(d === 'order') map[key].order += r.quantity;
+        else if(d === 'sales') map[key].sales += r.quantity;
+    });
+
+    const negatives = Object.values(map)
+        .map(r => {
+            const closing  = calcClosing(r.opening, r.production, r.sales);
+            const pending  = calcPending(r.order, r.sales);
+            const required = calcRequired(closing, pending);
+            return { ...r, closing, pending, required };
+        })
+        .filter(r => r.required < 0)
+        .sort((a,b) => a.required - b.required);
+
+    const totalShortage = negatives.reduce((sum, row) => sum + Math.abs(row.required), 0);
+
+    document.getElementById('negativeCount').textContent =
+        `${negatives.length} Products | Shortage ${totalShortage.toLocaleString()}`;
+
+    const tbody = document.getElementById('negativeStockBody');
+
+    if(!negatives.length){
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align:center;padding:30px;">
+                    No Required Stock Deficit Found
+                </td>
+            </tr>`;
+    }else{
+        tbody.innerHTML = negatives.map(r=>`
+            <tr>
+                <td>${r.segment}</td>
+                <td>${r.product}</td>
+                <td class="neg-stock">${r.required.toLocaleString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    document.getElementById('negativeStockModal').style.display='flex';
+}
+
+function closeNegativeStockPopup(){
+    document.getElementById('negativeStockModal').style.display='none';
+}
+
+function sortPivot(col){
+
+    if(pivotSortCol === col){
+        pivotSortDir *= -1;
+    }else{
+        pivotSortCol = col;
+        pivotSortDir = -1;
+    }
+
+    document.querySelectorAll('[id^="p-sort-"]').forEach(th => {
+
+        th.classList.remove('pivot-sorted');
+
+        const icon = th.querySelector('.p-sort-icon');
+
+        if(icon){
+            icon.textContent = '↕';
+        }
+    });
+
+    const active = document.getElementById('p-sort-' + col);
+
+    if(active){
+
+        active.classList.add('pivot-sorted');
+
+        const icon = active.querySelector('.p-sort-icon');
+
+        if(icon){
+            icon.textContent =
+                pivotSortDir === 1 ? '▲' : '▼';
+        }
+    }
+
+    render();
+}
 </script>
+
+
 </body>
 </html>
