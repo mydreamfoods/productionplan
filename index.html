@@ -929,7 +929,8 @@ function renderPivot(filtered) {
   const fStyle = 'padding:10px 14px;font-size:12px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);background:rgba(255,255,255,0.04)';
   const fNum   = fStyle + ";font-family:'JetBrains Mono',monospace;text-align:right";
   const fLabel = fStyle + ";font-family:'Outfit',sans-serif;text-align:left";
-  const fReq   = tot.required < 0 ? '#ef4444' : '#7d8590';
+  const negReqTotal = rows.filter(r => r.required < 0).reduce((s, r) => s + r.required, 0);
+  const fReq = negReqTotal < 0 ? '#ef4444' : '#7d8590';
 
   document.getElementById('pivotFoot').innerHTML = `<tr>
     <td style="${fLabel}" colspan="2">TOTAL</td>
@@ -939,7 +940,7 @@ function renderPivot(filtered) {
     <td style="${fNum};color:#0d9488">${tot.closingCalc.toLocaleString()}</td>
     <td style="${fNum};color:#f59e0b">${tot.order.toLocaleString()}</td>
     <td style="${fNum};color:${rows.filter(r=>r.pending>0).reduce((s,r)=>s+r.pending,0) > 0 ? '#f97316' : '#7d8590'}">${fmt(rows.filter(r=>r.pending>0).reduce((s,r)=>s+r.pending,0))}</td>
-    <td style="${fNum};color:${fReq};font-weight:700">${tot.required < 0 ? tot.required.toLocaleString() : '—'}</td>
+    <td style="${fNum};color:${fReq};font-weight:700">${negReqTotal < 0 ? negReqTotal.toLocaleString() : '—'}</td>
   </tr>`;
 }
 
