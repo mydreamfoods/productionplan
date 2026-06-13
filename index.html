@@ -407,6 +407,61 @@
 #pivotBody tr:hover{
     background:#1c2230;
 }
+
+  /* ── Product filter combobox ── */
+  .f-combo-wrap { position: relative; }
+  .f-combo-wrap input {
+    appearance: none; -webkit-appearance: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 30px 8px 12px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .f-combo-wrap input:focus { border-color: var(--accent); }
+  .f-combo-arrow {
+    position: absolute;
+    right: 10px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; color: var(--muted); font-size: 10px;
+  }
+  .f-combo-dropdown {
+    position: absolute;
+    top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    z-index: 999;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+  .f-combo-dropdown.open { display: block; }
+  .f-combo-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--label);
+    cursor: pointer;
+    transition: background 0.1s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .f-combo-item:hover, .f-combo-item.fc-active {
+    background: var(--accent-s);
+    color: var(--accent);
+  }
+  .f-combo-item mark {
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .f-combo-empty { padding: 9px 12px; font-size: 12px; color: var(--muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -448,11 +503,17 @@
         <option value="">All Segments</option>
       </select>
     </div>
-    <div class="filter-field">
+    <div class="filter-field" style="min-width:200px;">
       <label>Product</label>
-      <select id="fProduct">
-        <option value="">All Products</option>
-      </select>
+      <div class="f-combo-wrap">
+        <input type="text" id="fProduct" placeholder="All Products" autocomplete="off"
+          oninput="onFProductInput()"
+          onfocus="onFProductFocus()"
+          onblur="onFProductBlur()"
+          onkeydown="onFProductKey(event)"/>
+        <span class="f-combo-arrow">&#9660;</span>
+        <div class="f-combo-dropdown" id="fProductDrop"></div>
+      </div>
     </div>
     <div class="filter-field">
       <label>Name</label>
@@ -574,7 +635,7 @@
           </tr>
         </thead>
         <tbody id="pivotBody">
-          <tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading…</div></td></tr>
+          <tr><td colspan="6"><div class="state-box"><div class="spin"></div>Loading…</div></td></tr>
         </tbody>
         <tfoot id="pivotFoot"></tfoot>
       </table>
@@ -597,9 +658,6 @@
             <th onclick="sortBy('product')">Product <span class="sort-icon" id="sort-product">↕</span></th>
             <th onclick="sortBy('department')">Department <span class="sort-icon" id="sort-department">↕</span></th>
             <th onclick="sortBy('quantity')" style="text-align:right;">Qty <span class="sort-icon" id="sort-quantity">↕</span></th>
-            <th style="text-align:right;color:#0d9488;">Closing</th>
-            <th style="text-align:right;color:#f97316;">Pending</th>
-            <th style="text-align:right;color:#a855f7;">Required</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -664,6 +722,69 @@ let pivotSortCol = 'stock';  // 1=asc, -1=desc
 let pivotSortDir = -1;  
 let barChart, doughnutChart;
 
+
+// ── Product filter combobox ───────────────────────────
+let allProductOptions = [];
+let fcActiveIdx = -1;
+
+function renderFProductDrop(filter) {
+  const dd   = document.getElementById('fProductDrop');
+  const list = filter
+    ? allProductOptions.filter(p => p.toLowerCase().includes(filter.toLowerCase()))
+    : allProductOptions;
+  if (!list.length) {
+    dd.innerHTML = '<div class="f-combo-empty">No products found</div>';
+  } else {
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    dd.innerHTML = list.map((p, i) => {
+      const label = filter
+        ? p.replace(new RegExp(`(${esc(filter)})`, 'gi'), '<mark>$1</mark>')
+        : p;
+      return `<div class="f-combo-item" data-val="${p.replace(/"/g,'&quot;')}" data-idx="${i}"
+        onmousedown="pickFProduct(this.dataset.val)">${label}</div>`;
+    }).join('');
+  }
+  dd.classList.add('open');
+  fcActiveIdx = -1;
+}
+
+function pickFProduct(val) {
+  document.getElementById('fProduct').value = val;
+  closeFProductDrop();
+  render();
+}
+
+function closeFProductDrop() {
+  document.getElementById('fProductDrop').classList.remove('open');
+  fcActiveIdx = -1;
+}
+
+function onFProductInput() {
+  renderFProductDrop(document.getElementById('fProduct').value.trim());
+  render();
+}
+
+function onFProductFocus() {
+  renderFProductDrop(document.getElementById('fProduct').value.trim());
+}
+
+function onFProductBlur() {
+  setTimeout(closeFProductDrop, 160);
+}
+
+function onFProductKey(e) {
+  const dd    = document.getElementById('fProductDrop');
+  const items = dd.querySelectorAll('.f-combo-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); fcActiveIdx = Math.min(fcActiveIdx+1, items.length-1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); fcActiveIdx = Math.max(fcActiveIdx-1, 0); }
+  else if (e.key === 'Enter' && fcActiveIdx >= 0) { e.preventDefault(); pickFProduct(items[fcActiveIdx].dataset.val); return; }
+  else if (e.key === 'Escape') { closeFProductDrop(); return; }
+  else { return; }
+  items.forEach((el,i) => el.classList.toggle('fc-active', i === fcActiveIdx));
+  if (items[fcActiveIdx]) items[fcActiveIdx].scrollIntoView({ block:'nearest' });
+}
+
 // ── Load ──────────────────────────────────────────────
 async function loadData() {
   document.getElementById('errBanner').style.display = 'none';
@@ -698,17 +819,20 @@ function buildFilters() {
     sel.value = cur;
   };
   populate('fSegment', rawRows.map(r => r.segment).filter(Boolean));
-  populate('fProduct',  rawRows.map(r => r.product).filter(Boolean));
+  allProductOptions = [...new Set(rawRows.map(r => r.product).filter(Boolean))].sort();
+  renderFProductDrop('');
   populate('fName',     rawRows.map(r => r.name).filter(Boolean));
 
   // Segment → filter product options
   document.getElementById('fSegment').onchange = function() {
     const seg  = this.value;
     const opts = seg ? rawRows.filter(r => r.segment === seg).map(r => r.product) : rawRows.map(r => r.product);
-    populate('fProduct', opts.filter(Boolean));
+    allProductOptions = [...new Set(opts.filter(Boolean))].sort();
+    document.getElementById('fProduct').value = '';
+    renderFProductDrop('');
     render();
   };
-  ['fFrom','fTo','fProduct','fName'].forEach(id =>
+  ['fFrom','fTo','fName'].forEach(id =>
     document.getElementById(id).onchange = render
   );
 }
@@ -833,9 +957,6 @@ function render() {
       <td>${r.product}</td>
       <td>${deptBadge(r.department)}</td>
       <td class="num">${r.quantity.toLocaleString()}</td>
-      <td class="num ${r.closing > 0 ? 'stock-pos' : 'stock-zero'}">${r.closing.toLocaleString()}</td>
-      <td class="num ${r.pending > 0 ? 'pend-pos' : 'pend-zero'}">${r.pending.toLocaleString()}</td>
-      <td class="num ${r.required < 0 ? 'req-neg' : 'req-zero'}">${r.required < 0 ? r.required.toLocaleString() : '—'}</td>
     </tr>`).join('');
 
   // Charts
@@ -897,7 +1018,7 @@ function renderPivot(filtered) {
 
   const tbody = document.getElementById('pivotBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="state-box">No data</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6"><div class="state-box">No data</div></td></tr>';
     document.getElementById('pivotFoot').innerHTML = '';
     return;
   }
@@ -1054,24 +1175,26 @@ function sortBy(col) {
 
 function setTableLoading() {
   document.getElementById('tableBody').innerHTML =
-    `<tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+    `<tr><td colspan="6"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
   document.getElementById('pivotBody').innerHTML =
-    `<tr><td colspan="9"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
+    `<tr><td colspan="6"><div class="state-box"><div class="spin"></div>Loading data…</div></td></tr>`;
   document.getElementById('rowCount').textContent = '—';
   document.getElementById('pivotCount').textContent = '—';
 }
 function setTableEmpty(msg) {
   document.getElementById('tableBody').innerHTML =
-    `<tr><td colspan="9"><div class="state-box">${msg}</div></td></tr>`;
+    `<tr><td colspan="6"><div class="state-box">${msg}</div></td></tr>`;
   document.getElementById('pivotBody').innerHTML =
-    `<tr><td colspan="9"><div class="state-box">${msg}</div></td></tr>`;
+    `<tr><td colspan="6"><div class="state-box">${msg}</div></td></tr>`;
   document.getElementById('rowCount').textContent = '0 rows';
   document.getElementById('pivotCount').textContent = '0 products';
 }
 
 function resetFilters() {
-  ['fFrom','fTo','fSegment','fProduct','fName'].forEach(id =>
+  ['fFrom','fTo','fSegment','fName'].forEach(id =>
     document.getElementById(id).value = '');
+  document.getElementById('fProduct').value = '';
+  closeFProductDrop();
   render();
 }
 
