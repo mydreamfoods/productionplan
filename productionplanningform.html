@@ -282,6 +282,117 @@
     .card { padding: 18px; }
     .header-pill { display: none; }
   }
+
+  /* ── Mode Toggle ── */
+  .mode-toggle {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .mode-btn {
+    flex: 1; padding: 9px;
+    border: none; border-radius: 7px;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .mode-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+  .mode-btn.active.update-mode { color: var(--accent); }
+
+  /* ── Search Entries Panel ── */
+  .search-card {
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .search-card.visible { display: block; }
+  .search-head {
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  .search-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 14px; }
+  .search-row .field { flex: 1; }
+  .btn-search {
+    padding: 10px 18px; border-radius: 9px;
+    border: none; background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Outfit', sans-serif; cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-search:hover { background: var(--accent-h); }
+  .btn-search:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .entries-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .entry-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .entry-item:hover { border-color: var(--accent); background: var(--accent-s); }
+  .entry-item.selected { border-color: var(--accent); background: var(--accent-s); }
+  .entry-meta { flex: 1; }
+  .entry-meta strong { font-size: 13px; color: var(--text); display: block; }
+  .entry-meta span   { font-size: 11px; color: var(--muted); }
+  .entry-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .entry-dept {
+    font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 20px;
+    background: var(--accent-s); color: var(--accent);
+    white-space: nowrap;
+  }
+  .entries-empty { padding: 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* Edit mode indicator */
+  .edit-banner {
+    display: none;
+    background: var(--accent-s);
+    border: 1px solid rgba(37,99,235,0.3);
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-size: 13px; color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 14px;
+    align-items: center; gap: 8px;
+  }
+  .edit-banner.visible { display: flex; }
+  .btn-cancel-edit {
+    margin-left: auto;
+    background: transparent; border: 1px solid rgba(37,99,235,0.4);
+    color: var(--accent); font-size: 12px; font-weight: 500;
+    padding: 4px 12px; border-radius: 6px;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+  }
+  .btn-cancel-edit:hover { background: rgba(37,99,235,0.08); }
+
+  @media (max-width: 580px) {
+    .search-row { flex-direction: column; }
+    .search-row .btn-search { width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -304,6 +415,39 @@
   <div class="banner banner-err" id="errBanner">
     <span id="errMsg">⚠ Failed to load</span>
     <button class="retry-btn" onclick="init()">↺ Retry</button>
+  </div>
+
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button type="button" class="mode-btn active" id="btnNew" onclick="setMode('new')">✚ New Entry</button>
+    <button type="button" class="mode-btn update-mode" id="btnUpdate" onclick="setMode('update')">✏️ Update Entry</button>
+  </div>
+
+  <!-- Edit mode banner -->
+  <div class="edit-banner" id="editBanner">
+    ✏️ Editing row — make changes below and click Update
+    <button class="btn-cancel-edit" onclick="cancelEdit()">✕ Cancel</button>
+  </div>
+
+  <!-- Search entries panel (update mode) -->
+  <div class="search-card" id="searchCard">
+    <div class="search-head">🔍 Find Your Entry</div>
+    <div class="search-row">
+      <div class="field">
+        <label>Name</label>
+        <select id="searchName">
+          <option value="">— Select Name —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="searchDate"/>
+      </div>
+      <button type="button" class="btn-search" id="searchBtn" onclick="searchEntries()">Search</button>
+    </div>
+    <div class="entries-list" id="entriesList">
+      <div class="entries-empty">Select a name and click Search</div>
+    </div>
   </div>
 
   <form id="form" novalidate>
@@ -363,10 +507,24 @@
           <input type="number" id="quantity" placeholder="0" min="0"/>
         </div>
       </div>
+      <div class="g3" style="margin-top:14px;">
+        <div class="field">
+          <label>Size</label>
+          <input type="text" id="size" readonly placeholder="Auto-filled"/>
+        </div>
+        <div class="field">
+          <label>Company</label>
+          <input type="text" id="company" readonly placeholder="Auto-filled"/>
+        </div>
+        <div class="field">
+          <label>Market</label>
+          <input type="text" id="market" readonly placeholder="Auto-filled"/>
+        </div>
+      </div>
     </div>
 
     <div class="btn-row">
-      <button type="button" class="btn-clear" onclick="resetForm()">Clear All</button>
+      <button type="button" class="btn-clear" id="clearBtn" onclick="resetForm()">Clear All</button>
       <button type="submit" class="btn-submit" id="submitBtn">
         <span id="submitLabel">Submit Entry</span>
       </button>
@@ -434,12 +592,16 @@
       allProducts = pJson.products;
 
       // Populate name dropdown
-      const nameSel = document.getElementById('name');
-      nameSel.innerHTML = '<option value="">— Select Name —</option>';
+      const nameSel    = document.getElementById('name');
+      const searchSel  = document.getElementById('searchName');
+      nameSel.innerHTML   = '<option value="">— Select Name —</option>';
+      searchSel.innerHTML = '<option value="">— Select Name —</option>';
       allUsers.forEach(u => {
-        const o = document.createElement('option');
-        o.value = o.textContent = u.name;
-        nameSel.appendChild(o);
+        [nameSel, searchSel].forEach(sel => {
+          const o = document.createElement('option');
+          o.value = o.textContent = u.name;
+          sel.appendChild(o);
+        });
       });
 
       // Populate segment dropdown
@@ -476,6 +638,9 @@
     const wrap = document.getElementById('productWrap');
     inp.value = '';
     inp.classList.remove('has-value');
+    document.getElementById('size').value    = '';
+    document.getElementById('company').value = '';
+    document.getElementById('market').value  = '';
     currentProducts = seg ? allProducts.filter(p => p.segment === seg) : [];
     if (!seg) {
       inp.disabled = true;
@@ -519,6 +684,12 @@
     inp.value = val;
     inp.classList.add('has-value');
     closeDropdown();
+    // Auto-fill Size & Company
+    const p = currentProducts.find(p => p.product === val);
+    document.getElementById('size').value    = p ? (p.size    || '') : '';
+    document.getElementById('company').value = p ? (p.company || '') : '';
+    document.getElementById('market').value  = p ? (p.market  || '') : '';
+    document.getElementById('market').value  = p ? (p.market  || '') : '';
     document.getElementById('quantity').focus();
   }
 
@@ -565,6 +736,127 @@
     if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
   }
 
+  // ── Mode & Edit state ─────────────────────────────────
+  let currentMode     = 'new';   // 'new' | 'update'
+  let editingRowIndex = null;
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('btnNew').classList.toggle('active', mode === 'new');
+    document.getElementById('btnUpdate').classList.toggle('active', mode === 'update');
+    document.getElementById('searchCard').classList.toggle('visible', mode === 'update');
+    document.getElementById('submitLabel').textContent = mode === 'new' ? 'Submit Entry' : 'Update Entry';
+    document.getElementById('clearBtn').textContent    = mode === 'new' ? 'Clear All' : 'Clear All';
+    if (mode === 'update') {
+      // Pre-fill search name from current name selection
+      const cur = document.getElementById('name').value;
+      if (cur) document.getElementById('searchName').value = cur;
+      document.getElementById('searchDate').value = document.getElementById('date').value;
+    }
+    if (mode === 'new') cancelEdit();
+  }
+
+  // ── Search entries ─────────────────────────────────────
+  async function searchEntries() {
+    const name = document.getElementById('searchName').value;
+    const date = document.getElementById('searchDate').value;
+    if (!name) { toast('Select a name to search', 'fail'); return; }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.textContent = 'Searching…';
+    document.getElementById('entriesList').innerHTML = '<div class="entries-empty">Loading…</div>';
+
+    try {
+      // Convert yyyy-mm-dd → dd/MM/yyyy for GAS filter
+      let dateParam = '';
+      if (date) {
+        const p = date.split('-');
+        dateParam = `${p[2]}/${p[1]}/${p[0]}`;
+      }
+      const url  = `${GAS_URL}?action=getMyEntries&name=${encodeURIComponent(name)}&date=${encodeURIComponent(dateParam)}`;
+      const json = await safeFetch(url);
+      renderEntries(json.entries || []);
+    } catch (err) {
+      toast('Search error: ' + err.message, 'fail');
+      document.getElementById('entriesList').innerHTML = '<div class="entries-empty">Failed to load entries</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Search';
+    }
+  }
+
+  function renderEntries(entries) {
+    const list = document.getElementById('entriesList');
+    if (!entries.length) {
+      list.innerHTML = '<div class="entries-empty">No entries found</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => `
+      <div class="entry-item" onclick="loadEntry(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+        <div class="entry-meta">
+          <strong>${e.product}</strong>
+          <span>${e.date} · ${e.segment}</span>
+        </div>
+        <span class="entry-dept">${e.department}</span>
+        <span class="entry-qty">${e.quantity}</span>
+      </div>`).join('');
+  }
+
+  function loadEntry(entry) {
+    // Highlight selected
+    document.querySelectorAll('.entry-item').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    editingRowIndex = entry.rowIndex;
+
+    // Fill form fields
+    document.getElementById('date').value = (() => {
+      const p = entry.date.split('/');
+      return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : entry.date;
+    })();
+    document.getElementById('name').value       = entry.name;
+    document.getElementById('email').value      = entry.email;
+    document.getElementById('department').value = entry.department;
+    document.getElementById('quantity').value   = entry.quantity;
+
+    // Set segment
+    const segSel = document.getElementById('segment');
+    segSel.value = entry.segment;
+
+    // Set product via combobox
+    const seg = entry.segment;
+    currentProducts = seg ? allProducts.filter(p => p.segment === seg) : [];
+    // Auto-fill size & company
+    const pd = currentProducts.find(p => p.product === entry.product);
+    document.getElementById('size').value    = pd ? (pd.size    || '') : '';
+    document.getElementById('company').value = pd ? (pd.company || '') : '';
+    document.getElementById('market').value  = pd ? (pd.market  || '') : '';
+    document.getElementById('market').value  = pd ? (pd.market  || '') : '';
+    const prodInp  = document.getElementById('product');
+    const prodWrap = document.getElementById('productWrap');
+    if (seg) {
+      prodInp.disabled = false;
+      prodWrap.classList.remove('combo-disabled');
+    }
+    prodInp.value = entry.product;
+    prodInp.classList.add('has-value');
+
+    // Show edit banner
+    document.getElementById('editBanner').classList.add('visible');
+    document.getElementById('submitLabel').textContent = 'Update Entry';
+
+    // Scroll to form
+    document.getElementById('form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function cancelEdit() {
+    editingRowIndex = null;
+    document.getElementById('editBanner').classList.remove('visible');
+    document.getElementById('submitLabel').textContent = currentMode === 'new' ? 'Submit Entry' : 'Update Entry';
+    document.querySelectorAll('.entry-item').forEach(el => el.classList.remove('selected'));
+  }
+
   // ── Submit ─────────────────────────────────────────────
   document.getElementById('form').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -584,39 +876,57 @@
       }
     }
 
+    if (currentMode === 'update' && !editingRowIndex) {
+      toast('Select an entry to update', 'fail');
+      return;
+    }
+
     const btn = document.getElementById('submitBtn');
     const lbl = document.getElementById('submitLabel');
     btn.disabled = true;
-    lbl.textContent = 'Submitting…';
+    lbl.textContent = currentMode === 'update' ? 'Updating…' : 'Submitting…';
+
+    const payload = {
+      date:       document.getElementById('date').value,
+      name:       document.getElementById('name').value,
+      email:      document.getElementById('email').value,
+      department: document.getElementById('department').value,
+      segment:    document.getElementById('segment').value,
+      product:    document.getElementById('product').value,
+      quantity:   Number(document.getElementById('quantity').value) || 0
+    };
+    if (currentMode === 'update') {
+      payload.action   = 'update';
+      payload.rowIndex = editingRowIndex;
+    }
 
     try {
-      const res  = await fetch(GAS_URL, {
-        method: 'POST',
-        redirect: 'follow',
-        body: JSON.stringify({
-          date:       document.getElementById('date').value,
-          name:       document.getElementById('name').value,
-          email:      document.getElementById('email').value,
-          department: document.getElementById('department').value,
-          segment:    document.getElementById('segment').value,
-          product:    document.getElementById('product').value,
-          quantity:   Number(document.getElementById('quantity').value) || 0
-        })
+      const xhr = new XMLHttpRequest();
+      const result = await new Promise((resolve, reject) => {
+        xhr.open('POST', GAS_URL, true);
+        xhr.timeout  = 30000;
+        xhr.onload   = () => { try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(e); } };
+        xhr.onerror   = () => reject(new Error('Network error'));
+        xhr.ontimeout = () => reject(new Error('Timeout'));
+        xhr.send(JSON.stringify(payload));
       });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Server error');
+      if (!result.success) throw new Error(result.error || 'Server error');
 
-      toast('Entry saved ✓', 'success');
-
-      // Only clear Quantity — keep everything else for next entry
-      document.getElementById('quantity').value = '';
-      document.getElementById('quantity').focus();
-
+      if (currentMode === 'update') {
+        toast('Entry updated ✓', 'success');
+        cancelEdit();
+        // Re-run search to refresh list
+        searchEntries();
+      } else {
+        toast('Entry saved ✓', 'success');
+        document.getElementById('quantity').value = '';
+        document.getElementById('quantity').focus();
+      }
     } catch (err) {
       toast('Error: ' + err.message, 'fail');
     } finally {
       btn.disabled = false;
-      lbl.textContent = 'Submit Entry';
+      lbl.textContent = currentMode === 'update' ? 'Update Entry' : 'Submit Entry';
     }
   });
 
@@ -633,7 +943,11 @@
     pi.classList.remove('has-value');
     document.getElementById('productWrap').classList.add('combo-disabled');
     closeDropdown();
+    document.getElementById('size').value       = '';
+    document.getElementById('company').value    = '';
+    document.getElementById('market').value     = '';
     document.getElementById('quantity').value   = '';
+    cancelEdit();
   }
 
   // ── Toast ──────────────────────────────────────────────
