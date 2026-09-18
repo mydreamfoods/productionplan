@@ -587,30 +587,29 @@
       keys.length === 0 || !document.getElementById('name').value;
   }
 
-  // ── Batch POST ────────────────────────────────────────
+  // ── Submit via GET (avoids POST→GET redirect issue with GAS) ────
+  // Splits into chunks of 8 entries to stay within URL length limits
   async function postBatch(entries, retries = 3) {
-    for (let attempt = 0; attempt < retries; attempt++) {
-      const ctrl   = new AbortController();
-      const killer = setTimeout(() => ctrl.abort(), 120000);
-      try {
-        const res  = await fetch(GAS_URL, {
-          method:  'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body:    JSON.stringify({ action: 'batch', entries }),
-          signal:  ctrl.signal
-        });
-        const text = await res.text();
-        const json = parseGasResponse(text);
-        if (!json.success) throw new Error(json.error || 'Server error');
-        return json;
-      } catch(err) {
-        if (attempt === retries - 1)
-          throw err.name === 'AbortError' ? new Error('Server timed out — try again') : err;
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
-      } finally {
-        clearTimeout(killer);
+    const CHUNK = 50; // setValues handles all rows at once in GAS
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const chunk   = entries.slice(i, i + CHUNK);
+      const payload = encodeURIComponent(JSON.stringify({ entries: chunk }));
+      const url     = GAS_URL + '?action=submit&payload=' + payload;
+      let lastErr;
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          const json = await xhrGet(url);
+          if (!json.success) throw new Error(json.error || 'Server error');
+          break; // chunk succeeded
+        } catch(err) {
+          lastErr = err;
+          if (attempt < retries - 1)
+            await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
+        }
       }
+      if (lastErr) throw lastErr;
     }
+    return { success: true };
   }
 
   // ── Submit ────────────────────────────────────────────
