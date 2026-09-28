@@ -613,8 +613,11 @@
   }
 
   // ── Submit ────────────────────────────────────────────
+  let isSubmitting = false;
+
   document.getElementById('form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (isSubmitting) return; // block double-tap
 
     const date = document.getElementById('date').value;
     const name = document.getElementById('name').value;
@@ -634,7 +637,8 @@
 
     const btn = document.getElementById('submitBtn');
     const lbl = document.getElementById('submitLabel');
-    btn.disabled = true;
+    isSubmitting  = true;
+    btn.disabled  = true;
     lbl.textContent = `Submitting ${entries.length} item${entries.length === 1 ? '' : 's'}…`;
 
     try {
@@ -647,6 +651,7 @@
       toast(`Submit failed — ${err.message}`, 'fail');
     }
 
+    isSubmitting = false;
     lbl.textContent = 'Submit Entry';
     updateSummary();
   });
